@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import './chat.scss'
+import './chat.css'
 
 const Chat = () => {
   return (

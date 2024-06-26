@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import './detail.scss'
+import './detail.css'
 
 const Detail = () => {
   return (
