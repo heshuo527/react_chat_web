@@ -14,8 +14,8 @@ body {
   height: 100vh;
   color: white;
 }
- 
-.container{ 
+
+.container {
   width: 90vw;
   height: 90vh;
   background-color: rgba(17, 25, 40, 0.75);
@@ -25,3 +25,15 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.125);
   display: flex;
 }
+  /* 自定义滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
