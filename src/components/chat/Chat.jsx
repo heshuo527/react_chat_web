@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './chat.css'
 import EmojiPicker from 'emoji-picker-react'
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+
+  const endRef = useRef(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
 
   const handleEmoji = (e) => {
     console.log('eeee', e);
@@ -65,7 +71,7 @@ const Chat = () => {
         </div>
         <div className='message own'>
           <div className='texts'>
-          <img src='https://tse1-mm.cn.bing.net/th/id/OIP-C.Zte3ljd4g6kqrWWyg-8fhAHaEo?w=258&h=180&c=7&r=0&o=5&dpr=2&pid=1.7' />
+            <img src='https://tse1-mm.cn.bing.net/th/id/OIP-C.Zte3ljd4g6kqrWWyg-8fhAHaEo?w=258&h=180&c=7&r=0&o=5&dpr=2&pid=1.7' />
             <p>
               你好!!我是电话手机客户端手机客户端升级的黑科技时代开始的开始看的,多久是多久开始打卡好.
             </p>

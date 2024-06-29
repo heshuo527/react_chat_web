@@ -1,0 +1,48 @@
+import React, { useState, useEffect } from 'react'
+import './login.css'
+
+const Login = () => {
+
+  const [avatar, setAvatar] = useState({
+    file: null,
+    url: ''
+  });
+
+  const handleAvatar = (e) => {
+    if (e.target.files[0]) {
+      setAvatar({
+        file: e.target.files[0],
+        url: URL.createObjectURL(e.target.files[0]),
+      })
+    }
+  };
+  return (
+    <div className='login'>
+      <div className='item'>
+        <h2>欢迎回来</h2>
+        <form>
+          <input type='text' placeholder='Email' name='email' />
+          <input type='password' placeholder='Password' name='password' />
+          <button>登陆</button>
+        </form>
+      </div>
+      <div className='separator'></div>
+      <div className='item'>
+        <h2>创建用户</h2>
+        <form>
+          <label htmlFor='file'>
+            <img src={avatar.url || './avatar.png'} alt='' />
+            上传头像
+          </label>
+          <input type='file' id='file' style={{ display: 'none' }} onChange={handleAvatar} />
+          <input type='text' placeholder='Username' name='username' />
+          <input type='text' placeholder='Email' name='email' />
+          <input type='password' placeholder='Password' name='password' />
+          <button>注册</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default Login
