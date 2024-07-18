@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import './login.css'
 import { toast } from 'react-toastify';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import upload from '../../lib/upload';
 
 const Login = () => {
 
@@ -11,6 +12,8 @@ const Login = () => {
     file: null,
     url: ''
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleAvatar = (e) => {
     if (e.target.files[0]) {
@@ -21,23 +24,46 @@ const Login = () => {
     }
   };
 
-  const handleLogin = (e) => {
+  /**
+   * 用户登陆
+   * @param {*} e 
+   */
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
+    try {
+      const formData = new FormData(e.target);
+      const { email, password } = Object.fromEntries(formData);
+      await signInWithEmailAndPassword(auth, email, password);
+
+    } catch (error) {
+      console.log('🚀 _ file: Login.jsx:41 _ error:', error);
+      toast.error(error.message)
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /**
+   * 创建用户
+   * @param {*} e 
+   */
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const formData = new FormData(e.target);
 
     const { username, email, password } = Object.fromEntries(formData);
-    console.log('🚀 _ file: Login.jsx:26 _ useÒzrname:', username, email, password);
 
     try {
       const res = await createUserWithEmailAndPassword(auth, email, password);
+      const imgUrl = await upload(avatar.file);
 
       await setDoc(doc(db, 'user', res.user.uid), {
         username,
         email,
+        avatar: imgUrl,
         id: res.user.uid,
         blocked: [],
       })
@@ -50,6 +76,8 @@ const Login = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.message)
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,7 +88,7 @@ const Login = () => {
         <form onSubmit={handleLogin}>
           <input type='text' placeholder='Email' name='email' />
           <input type='password' placeholder='Password' name='password' />
-          <button>登陆</button>
+          <button disabled={loading}>{loading ? '加载中' : '登陆'}</button>
         </form>
       </div>
       <div className='separator'></div>
@@ -75,7 +103,7 @@ const Login = () => {
           <input type='text' placeholder='Username' name='username' />
           <input type='text' placeholder='Email' name='email' />
           <input type='password' placeholder='Password' name='password' />
-          <button>注册</button>
+          <button disabled={loading}>{loading ? '加载中' : '注册'}</button>
         </form>
       </div>
     </div>

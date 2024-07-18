@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import './detail.css'
+import { auth } from '../../lib/firebase'
 
 const Detail = () => {
   return (
@@ -65,7 +66,7 @@ const Detail = () => {
           </div>
         </div>
         <button>关闭用户</button>
-        <button className='logout'>注销</button>
+        <button className='logout' onClick={() => auth.signOut()}>注销</button>
       </div>
     </div>
   )
