@@ -47,7 +47,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       userId,
       token,
-      user: { id: userId, username, email, avatar }
+      user: { id: userId, username, email, avatar, blocked: [] }
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -80,7 +80,8 @@ router.post('/login', async (req, res) => {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        blocked: user.blocked || []
       }
     });
   } catch (error) {

@@ -1,9 +1,11 @@
 import React from 'react'
 import './detail.css'
 import { useUserStore } from '../../lib/userStore'
+import { useChatStore } from '../../lib/chatStore'
 
 const Detail = () => {
   const { currentUser, logout } = useUserStore();
+  const { user } = useChatStore();
 
   const handleLogout = () => {
     logout();
@@ -14,9 +16,9 @@ const Detail = () => {
   return (
     <div className='detail'>
       <div className='user'>
-        <img src='./avatar.png' alt='' />
-        <h2>女神</h2>
-        <p>得不到回应的山谷不值得一跃</p>
+        <img src={user?.avatar || "./avatar.png"} alt='' />
+        <h2>{user?.username || "用户"}</h2>
+        <p>{user?.email || ""}</p>
       </div>
       <div className='info'>
         <div className='option'>

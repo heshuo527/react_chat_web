@@ -52,6 +52,28 @@ const ChatList = () => {
     }
   };
 
+  const handleAddSuccess = () => {
+    // Refresh chats list after adding a friend
+    const refreshChats = async () => {
+      try {
+        const userChats = await api.getUserChats(currentUser.id);
+        const items = userChats.chats || [];
+
+        const promises = items.map(async (item) => {
+          const user = await api.getUserInfo(item.receiverId);
+          return { ...item, user };
+        });
+
+        const chatData = await Promise.all(promises);
+        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+      } catch (error) {
+        console.error('Refresh chats error:', error);
+      }
+    };
+    refreshChats();
+    setAddModal(false);
+  };
+
   return (
     <div className="chatList">
       <div className="search">
@@ -82,7 +104,7 @@ const ChatList = () => {
           </div>
         </div>
       ))}
-      {addModal && <AddUser />}
+      {addModal && <AddUser onAddSuccess={handleAddSuccess} />}
     </div>
   );
 };

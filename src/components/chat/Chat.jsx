@@ -103,10 +103,10 @@ const Chat = () => {
     <div className="chat">
       <div className="top">
         <div className="user">
-          <img src="./avatar.png" alt="" />
+          <img src={user?.avatar || "./avatar.png"} alt="" />
           <div className="texts">
-            <span>女神</span>
-            <p>得不到回应的山谷不值得一跃</p>
+            <span>{user?.username || "用户"}</span>
+            <p>{user?.email || ""}</p>
           </div>
         </div>
         <div className="icons">
