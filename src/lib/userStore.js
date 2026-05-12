@@ -1,7 +1,5 @@
-import { bundlerModuleNameResolver } from "typescript";
 import { create } from "zustand";
-import { db } from "./firebase";
-import { getDoc, doc } from "firebase/firestore";
+import { api } from "./api";
 
 export const useUserStore = create((set) => ({
   currentUser: null,
@@ -10,17 +8,45 @@ export const useUserStore = create((set) => ({
     if (!uid) return set({ currentUser: null, isLoading: false });
 
     try {
-      const docRef = doc(db, "user", uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        set({ currentUser: docSnap.data(), isLoading: false })
-      } else {
-        set({ currentUser: null, isLoading: false })
-      }
+      const user = await api.getUserInfo(uid);
+      set({ currentUser: user, isLoading: false });
     } catch (error) {
-      console.log('🚀 _ file: userStore.js:20 _ error:', error);
-      return set({ currentUser: null, isLoading: false });
+      console.log('fetchUserInfo error:', error);
+      set({ currentUser: null, isLoading: false });
     }
+  },
+  login: async (email, password) => {
+    set({ isLoading: true });
+    try {
+      const data = await api.login(email, password);
+      api.setToken(data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      set({ currentUser: data.user, isLoading: false });
+      return data;
+    } catch (error) {
+      console.log('login error:', error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+  register: async (userData) => {
+    set({ isLoading: true });
+    try {
+      const data = await api.register(userData);
+      api.setToken(data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      set({ currentUser: data.user, isLoading: false });
+      return data;
+    } catch (error) {
+      console.log('register error:', error);
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+  logout: () => {
+    api.setToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    set({ currentUser: null, isLoading: false });
   },
 }));

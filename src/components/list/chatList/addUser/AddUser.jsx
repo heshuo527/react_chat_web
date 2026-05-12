@@ -1,19 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./addUser.css";
-import {
-  getDoc,
-  where,
-  collection,
-  query,
-  getDocs,
-  setDoc,
-  serverTimestamp,
-  doc,
-  updateDoc,
-  arrayUnion
-} from "firebase/firestore";
-import { db } from '../../../../lib/firebase';
-import { useUserStore } from '../../../../lib/userStore'
+import { useUserStore } from '../../../../lib/userStore';
+import { api } from '../../../../lib/api';
 
 const AddUser = () => {
   const [user, setUser] = useState(null);
@@ -25,67 +13,57 @@ const AddUser = () => {
     const username = formData.get("username");
 
     try {
-      const userRef = collection(db, "user");
-      const p = query(userRef, where("username", "==", username));
-      const querySnapShot = await getDocs(p);
-      if (!querySnapShot.empty) {
-        setUser(querySnapShot.docs[0].data())
+      const users = await api.getAllUsers();
+      const foundUser = users.find(u => u.username === username);
+      if (foundUser) {
+        setUser(foundUser);
       }
     } catch (error) {
-      console.log("🚀 _ file: AddUser.jsx:14 _ error:", error);
+      console.log("Search user error:", error);
     }
   };
 
-  /**
-   * 添加一个用户
-   * 如果是新用户先去创建一个数据模型  否则会出问题
-   * @param {*}
-   */
   const handleAddUser = async () => {
-    const chatRef = collection(db, 'chats');
-    const userChatsRef = collection(db, 'userchats');
+    if (!user || !currentUser) return;
 
     try {
-      const newChatRef = doc(chatRef);
-      await setDoc(newChatRef, {
-        createdAt: serverTimestamp(),
-        message: [],
-      });
-
-      const updateUserChat = async (userId, chatDetails) => {
-        const userChatDocRef = doc(userChatsRef, userId);
-        const userChatDoc = await getDoc(userChatDocRef);
-
-        if (userChatDoc.exists()) {
-          await updateDoc(userChatDocRef, {
-            chats: arrayUnion(chatDetails)
-          });
-        } else {
-          await setDoc(userChatDocRef, {
-            chats: [chatDetails]
-          });
-        }
-      };
+      // Create or get existing chat
+      const chat = await api.getOrCreateChat(currentUser.id, user.id);
 
       const chatDetailsForUser = {
-        chatId: newChatRef.id,
+        chatId: chat._id,
         lastMessage: '',
-        receiverId: currentUser.id,
-        upDateAt: Date.now()
+        receiverId: user.id,
+        updatedAt: Date.now()
       };
 
       const chatDetailsForCurrentUser = {
-        chatId: newChatRef.id,
+        chatId: chat._id,
         lastMessage: '',
-        receiverId: user.id,
-        upDateAt: Date.now()
+        receiverId: currentUser.id,
+        updatedAt: Date.now()
       };
 
-      await updateUserChat(user.id, chatDetailsForUser);
-      await updateUserChat(currentUser.id, chatDetailsForCurrentUser);
+      // Get existing user chats
+      const userChats = await api.getUserChats(user.id);
+      const currentUserChats = await api.getUserChats(currentUser.id);
+
+      // Update user's chat list
+      const userChatsList = userChats.chats || [];
+      if (!userChatsList.find(c => c.chatId === chat._id)) {
+        userChatsList.push(chatDetailsForUser);
+        await api.updateUserChats(user.id, userChatsList);
+      }
+
+      // Update current user's chat list
+      const currentUserChatsList = currentUserChats.chats || [];
+      if (!currentUserChatsList.find(c => c.chatId === chat._id)) {
+        currentUserChatsList.push(chatDetailsForCurrentUser);
+        await api.updateUserChats(currentUser.id, currentUserChatsList);
+      }
 
     } catch (error) {
-      console.log('🚀 _ file: AddUser.jsx:38 _ error:', error);
+      console.log('Add user error:', error);
     }
   }
 

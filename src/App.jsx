@@ -5,26 +5,30 @@ import Login from "./components/login/Login";
 import Notification from "./components/notifiction/Notification";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./lib/firebase";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
+import { api } from "./lib/api";
 
 const App = () => {
-  const user = false;
-
   const { currentUser, isLoading, fetchUserInfo } = useUserStore();
   const { chatId } = useChatStore();
 
   useEffect(() => {
-    const unSub = onAuthStateChanged(auth, (user) => {
-      fetchUserInfo(user?.uid);
-    });
-    return () => {
-      unSub();
-    };
+    // Check for stored token and user on app load
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
+    if (storedUser && token) {
+      try {
+        const user = JSON.parse(storedUser);
+        fetchUserInfo(user.id);
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
+    } else {
+      useUserStore.setState({ isLoading: false });
+    }
   }, [fetchUserInfo]);
-
 
   if (isLoading) return <div className="loading">Loading...</div>
 

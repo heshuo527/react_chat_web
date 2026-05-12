@@ -1,7 +1,5 @@
-import { bundlerModuleNameResolver } from "typescript";
 import { create } from "zustand";
-import { db } from "./firebase";
-import { getDoc, doc } from "firebase/firestore";
+import { api } from "./api";
 import { useUserStore } from "./userStore";
 
 export const useChatStore = create((set) => ({
@@ -12,15 +10,14 @@ export const useChatStore = create((set) => ({
   changeChat: (chatId, user) => {
     const currentUser = useUserStore.getState().currentUser;
 
-    // isCurrentUserBlocked
-    if (user.blocked.includes(currentUser.id)) {
+    if (user.blocked?.includes(currentUser.id)) {
       return set({
         chatId,
         user: null,
         isCurrentUserBlocked: true,
         isReceiverBlocked: false,
       });
-    } else if (user.blocked.includes(user.id)) {
+    } else if (user.blocked?.includes(user.id)) {
       return set({
         chatId,
         user,
@@ -35,7 +32,6 @@ export const useChatStore = create((set) => ({
         isReceiverBlocked: false,
       });
     }
-
   },
   changeBlock: () => {
     set((state) => ({

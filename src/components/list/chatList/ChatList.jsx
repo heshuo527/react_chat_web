@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./chatList.css";
 import AddUser from "./addUser/AddUser";
 import { useUserStore } from "../../../lib/userStore";
-
-import { db } from "../../../lib/firebase";
-import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useChatStore } from "../../../lib/chatStore";
+import { api } from "../../../lib/api";
 
 const ChatList = () => {
   const [addModal, setAddModal] = useState(false);
@@ -15,67 +13,44 @@ const ChatList = () => {
   const { chatId, changeChat } = useChatStore();
 
   useEffect(() => {
-    const unSub = onSnapshot(
-      doc(db, "userchats", currentUser.id),
-      async (res) => {
-        const items = res.data()?.chats || [];
+    if (!currentUser?.id) return;
+
+    const fetchChats = async () => {
+      try {
+        const userChats = await api.getUserChats(currentUser.id);
+        const items = userChats.chats || [];
 
         const promises = items.map(async (item) => {
-          const userDocRef = doc(db, "user", item.receiverId);
-          const useDocSnap = await getDoc(userDocRef);
-          const user = useDocSnap.data();
+          const user = await api.getUserInfo(item.receiverId);
           return { ...item, user };
         });
 
-        const chantData = await Promise.all(promises);
-        setChats(chantData.sort((a, b) => b.updateAt - a.updateAt));
+        const chatData = await Promise.all(promises);
+        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+      } catch (error) {
+        console.error('Fetch chats error:', error);
       }
-    );
-
-    return () => {
-      unSub();
     };
+
+    fetchChats();
   }, [currentUser.id]);
 
   const handleSelect = async (chat) => {
-    const userChats = chats.map((p) => {
-      const { user, ...rest } = p;
-      return rest;
-    });
-
-    const chatIndex = userChats.findIndex((p) => p.chatId === chat.chatId);
-    console.log('🚀 _ file: ChatList.jsx:47 _ chatIndex:', chatIndex);
-
-    userChats[chatIndex].isSeen = true;
-
-    const userChatsRef = doc(db, "userchats", currentUser.id);
-
     try {
-      await updateDoc(userChatsRef, {
-        chats: userChats,
-      });
+      const userChats = await api.getUserChats(currentUser.id);
+      const chats = userChats.chats || [];
+      const chatIndex = chats.findIndex((p) => p.chatId === chat.chatId);
+
+      if (chatIndex !== -1) {
+        chats[chatIndex].isSeen = true;
+        await api.updateUserChats(currentUser.id, chats);
+      }
+
       changeChat(chat.chatId, chat.user);
     } catch (error) {
-      console.log("🚀 _ file: ChatList.jsx:58 _ error:", error);
+      console.log("Select chat error:", error);
     }
-
-    // const userChatsRef = doc(db, "userchats", currentUser.id);
-    // const userChantsSnapshot = await getDoc(userChatsRef);
-
-    // if (userChantsSnapshot.exists()) {
-    //   const userChatsData = userChantsSnapshot.data();
-    //   const chatIndex = userChatsData.chats.findIndex((c) => c.chatId === chatId);
-
-    //   userChatsData.chats[chatIndex].lastMessage = text;
-    //   userChatsData.chats[chatIndex].isSeen = true;
-
-    //   await updateDoc(userChatsRef, {
-    //     chats: userChatsData.chats,
-    //   });
-    // }
   };
-
-  console.log('chats:::::', chats);
 
   return (
     <div className="chatList">

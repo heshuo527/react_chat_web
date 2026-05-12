@@ -1,17 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./chat.css";
 import EmojiPicker from "emoji-picker-react";
-import {
-  arrayUnion,
-  doc,
-  getDoc,
-  onSnapshot,
-  updateDoc,
-} from "firebase/firestore";
-import { db } from "../../lib/firebase";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
-import { update } from "firebase/database";
+import { api } from "../../lib/api";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -32,13 +24,18 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
-      setChat(res.data());
-    });
+    if (!chatId) return;
 
-    return () => {
-      unSub();
+    const fetchChat = async () => {
+      try {
+        const chatData = await api.getChat(chatId);
+        setChat(chatData);
+      } catch (error) {
+        console.error('Fetch chat error:', error);
+      }
     };
+
+    fetchChat();
   }, [chatId]);
 
   const handleImg = (e) => {
@@ -56,44 +53,42 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-    if (text === "") return;
-
-    let imgUrl = null;
+    if (text === "" && !img.file) return;
 
     try {
+      let imgUrl = null;
+
       if (img.file) {
-        imgUrl = await update(img.file);
+        imgUrl = await api.uploadFile(img.file);
       }
-      await updateDoc(doc(db, "chats", chatId), {
-        messages: arrayUnion({
-          senderId: currentUser.id,
-          text,
-          createdAt: new Date(),
-          ...Chat(imgUrl && { img: imgUrl }),
-        }),
-      });
 
-      const userIds = [currentUser.id, user.id];
+      const message = {
+        senderId: currentUser.id,
+        text,
+        img: imgUrl,
+        createdAt: new Date(),
+      };
 
-      userIds.forEach(async (id) => {
-        const userChatsRef = doc(db, "userchats", id);
-        const userChantsSnapshot = await getDoc(userChatsRef);
+      await api.addMessage(chatId, message);
 
-        if (userChantsSnapshot.exists()) {
-          const userChatsData = userChantsSnapshot.data();
-          const chatIndex = userChatsData.chats.findIndex((c) => c.chatId === chatId);
+      // Update user chats
+      const userChats = await api.getUserChats(currentUser.id);
+      const chats = userChats.chats || [];
+      const chatIndex = chats.findIndex((c) => c.chatId === chatId);
 
-          userChatsData.chats[chatIndex].lastMessage = text;
-          userChatsData.chats[chatIndex].isSeen = id === currentUser.id ? true : false;
-          userChatsData.chats[chatIndex].updateAt = Date.now();
+      if (chatIndex !== -1) {
+        chats[chatIndex].lastMessage = text;
+        chats[chatIndex].isSeen = false;
+        chats[chatIndex].updatedAt = Date.now();
+        await api.updateUserChats(currentUser.id, chats);
+      }
 
-          await updateDoc(userChatsRef, {
-            chats: userChatsData.chats,
-          });
-        }
-      })
+      // Refresh chat data
+      const updatedChat = await api.getChat(chatId);
+      setChat(updatedChat);
+
     } catch (error) {
-      console.log("🚀 _ file: Chat.jsx:41 _ error:", error);
+      console.log("Send message error:", error);
     }
 
     setImg({
@@ -111,7 +106,7 @@ const Chat = () => {
           <img src="./avatar.png" alt="" />
           <div className="texts">
             <span>女神</span>
-            <p> 得不到回应的山谷不值得一跃</p>
+            <p>得不到回应的山谷不值得一跃</p>
           </div>
         </div>
         <div className="icons">
@@ -121,12 +116,11 @@ const Chat = () => {
         </div>
       </div>
       <div className="center">
-        {chat?.messages?.map((message) => (
-          <div className={message.senderId === currentUser.id ? "message own" : "message"} key={message?.createAt}>
+        {chat?.messages?.map((message, index) => (
+          <div className={message.senderId === currentUser.id ? "message own" : "message"} key={index}>
             <div className="texts">
               {message.img && <img src={message.img} />}
               <p>{message.text}</p>
-              {/* <span>1 分钟</span> */}
             </div>
           </div>
         ))}

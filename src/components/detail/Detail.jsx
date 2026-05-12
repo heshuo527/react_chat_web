@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import './detail.css'
-import { auth } from '../../lib/firebase'
+import { useUserStore } from '../../lib/userStore'
 
 const Detail = () => {
+  const { currentUser, logout } = useUserStore();
+
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  };
+
   return (
     <div className='detail'>
       <div className='user'>
@@ -66,7 +74,7 @@ const Detail = () => {
           </div>
         </div>
         <button>关闭用户</button>
-        <button className='logout' onClick={() => auth.signOut()}>注销</button>
+        <button className='logout' onClick={handleLogout}>注销</button>
       </div>
     </div>
   )

@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import './login.css'
 import { toast } from 'react-toastify';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUserStore } from '../../lib/userStore';
 import upload from '../../lib/upload';
 
 const Login = () => {
-
   const [avatar, setAvatar] = useState({
     file: null,
     url: ''
   });
 
   const [loading, setLoading] = useState(false);
+  const { login, register } = useUserStore();
 
   const handleAvatar = (e) => {
     if (e.target.files[0]) {
@@ -24,10 +22,6 @@ const Login = () => {
     }
   };
 
-  /**
-   * 用户登陆
-   * @param {*} e 
-   */
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -35,44 +29,36 @@ const Login = () => {
     try {
       const formData = new FormData(e.target);
       const { email, password } = Object.fromEntries(formData);
-      await signInWithEmailAndPassword(auth, email, password);
-
+      await login(email, password);
+      toast.success('登录成功!');
     } catch (error) {
-      console.log('🚀 _ file: Login.jsx:41 _ error:', error);
+      console.log('Login error:', error);
       toast.error(error.message)
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * 创建用户
-   * @param {*} e 
-   */
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.target);
-
     const { username, email, password } = Object.fromEntries(formData);
 
     try {
-      const res = await createUserWithEmailAndPassword(auth, email, password);
-      const imgUrl = await upload(avatar.file);
+      let imgUrl = '';
+      if (avatar.file) {
+        imgUrl = await upload(avatar.file);
+      }
 
-      await setDoc(doc(db, 'user', res.user.uid), {
+      await register({
         username,
         email,
+        password,
         avatar: imgUrl,
-        id: res.user.uid,
-        blocked: [],
-      })
+      });
 
-      await setDoc(doc(db, 'userchats', res.user.uid), {
-        chats: [],
-      })
-
-      toast.success('创建成功!')
+      toast.success('创建成功!');
     } catch (error) {
       console.log(error);
       toast.error(error.message)
