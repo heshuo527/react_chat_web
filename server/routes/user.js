@@ -11,6 +11,11 @@ router.get('/:uid', authenticateToken, async (req, res) => {
     const { uid } = req.params;
     const db = getDB();
 
+    // Validate ObjectId format
+    if (!ObjectId.isValid(uid)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
     const user = await db.collection('users').findOne({ _id: new ObjectId(uid) });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -35,6 +40,11 @@ router.put('/:uid', authenticateToken, async (req, res) => {
     const { uid } = req.params;
     const { username, avatar } = req.body;
     const db = getDB();
+
+    // Validate ObjectId format
+    if (!ObjectId.isValid(uid)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
 
     const updateData = {};
     if (username) updateData.username = username;

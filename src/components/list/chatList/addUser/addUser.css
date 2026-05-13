@@ -11,6 +11,23 @@
   right: 0;
   margin: auto;
 
+  .closeBtn {
+    position: absolute;
+    top: -45px;
+    right: 0;
+    background: rgba(17, 25, 40, 0.861);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+    opacity: 0.7;
+    border-radius: 5px;
+    &:hover {
+      opacity: 1;
+    }
+  }
+
   > form {
     display: flex;
     gap: 20px;
@@ -58,5 +75,11 @@
       border: none;
       cursor: pointer;
     }
+  }
+
+  .error {
+    color: #ff4444;
+    margin-top: 10px;
+    font-size: 14px;
   }
 }

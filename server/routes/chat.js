@@ -75,6 +75,10 @@ router.get('/chat/:chatId', authenticateToken, async (req, res) => {
     const { chatId } = req.params;
     const db = getDB();
 
+    if (!ObjectId.isValid(chatId)) {
+      return res.status(400).json({ error: 'Invalid chat ID format' });
+    }
+
     const chat = await db.collection('chats').findOne({ _id: new ObjectId(chatId) });
     if (!chat) {
       return res.status(404).json({ error: 'Chat not found' });
@@ -94,8 +98,11 @@ router.post('/chat/:chatId/message', authenticateToken, async (req, res) => {
     const { text, senderId, img } = req.body;
     const db = getDB();
 
+    if (!ObjectId.isValid(chatId)) {
+      return res.status(400).json({ error: 'Invalid chat ID format' });
+    }
+
     const message = {
-      _id: new ObjectId(),
       text,
       senderId,
       img: img || null,

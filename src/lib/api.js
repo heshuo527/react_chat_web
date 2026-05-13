@@ -133,6 +133,37 @@ class ApiService {
     }
     return data;
   }
+
+  // Friend Request APIs
+  async sendFriendRequest(fromUserId, toUserId) {
+    return this.request('/friend/request', {
+      method: 'POST',
+      body: JSON.stringify({ fromUserId, toUserId }),
+    });
+  }
+
+  async getFriendRequests(userId) {
+    return this.request(`/friend/requests/${userId}`);
+  }
+
+  async acceptFriendRequest(requestId) {
+    return this.request('/friend/accept', {
+      method: 'POST',
+      body: JSON.stringify({ requestId }),
+    });
+  }
+
+  async rejectFriendRequest(requestId) {
+    return this.request('/friend/reject', {
+      method: 'POST',
+      body: JSON.stringify({ requestId }),
+    });
+  }
+
+  getCurrentUserId() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.id;
+  }
 }
 
 export const api = new ApiService();

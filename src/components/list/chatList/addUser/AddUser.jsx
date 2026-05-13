@@ -3,11 +3,15 @@ import "./addUser.css";
 import { useUserStore } from '../../../../lib/userStore';
 import { api } from '../../../../lib/api';
 
-const AddUser = ({ onAddSuccess }) => {
+const AddUser = ({ onAddSuccess, onClose }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { currentUser } = useUserStore();
+
+  const handleClose = () => {
+    if (onClose) onClose();
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -36,33 +40,10 @@ const AddUser = ({ onAddSuccess }) => {
     if (!user || !currentUser) return;
 
     setLoading(true);
+    setError("");
     try {
-      // Check if chat already exists
-      const existingChats = await api.getUserChats(currentUser.id);
-      const existingChat = (existingChats.chats || []).find(c => c.receiverId === user.id);
+      await api.sendFriendRequest(currentUser.id, user.id);
       
-      if (existingChat) {
-        setError("已经是好友了");
-        setLoading(false);
-        return;
-      }
-
-      // Create new chat
-      const chat = await api.getOrCreateChat(currentUser.id, user.id);
-
-      const chatDetailsForCurrentUser = {
-        chatId: chat._id,
-        lastMessage: '',
-        receiverId: user.id,
-        updatedAt: Date.now()
-      };
-
-      // Update current user's chat list
-      const currentUserChats = await api.getUserChats(currentUser.id);
-      const currentUserChatsList = currentUserChats.chats || [];
-      currentUserChatsList.push(chatDetailsForCurrentUser);
-      await api.updateUserChats(currentUser.id, currentUserChatsList);
-
       // Notify parent to refresh
       if (onAddSuccess) {
         onAddSuccess();
@@ -82,6 +63,7 @@ const AddUser = ({ onAddSuccess }) => {
 
   return (
     <div className="addUser">
+      <button className="closeBtn" onClick={handleClose}>×</button>
       <form onSubmit={handleSearch}>
         <input type="text" placeholder="输入用户名搜索" name="username" />
         <button type="submit">搜索</button>
@@ -93,7 +75,7 @@ const AddUser = ({ onAddSuccess }) => {
           <span>{user.username}</span>
         </div>
         <button onClick={handleAddUser} disabled={loading}>
-          {loading ? "添加中..." : "添加好友"}
+          {loading ? "发送中..." : "发送好友申请"}
         </button>
       </div>}
     </div>

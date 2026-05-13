@@ -86,17 +86,15 @@ const Chat = () => {
       // Refresh chat data
       const updatedChat = await api.getChat(chatId);
       setChat(updatedChat);
-
     } catch (error) {
       console.log("Send message error:", error);
+    } finally {
+      setImg({
+        url: "",
+        file: null
+      });
+      setText("");
     }
-
-    setImg({
-      url: "",
-      file: null
-    });
-
-    setText("");
   };
 
   return (

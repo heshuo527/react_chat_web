@@ -20,10 +20,12 @@ const ChatList = () => {
         const userChats = await api.getUserChats(currentUser.id);
         const items = userChats.chats || [];
 
-        const promises = items.map(async (item) => {
-          const user = await api.getUserInfo(item.receiverId);
-          return { ...item, user };
-        });
+        const promises = items
+          .filter(item => item.receiverId)  // Filter out invalid items
+          .map(async (item) => {
+            const user = await api.getUserInfo(item.receiverId);
+            return { ...item, user };
+          });
 
         const chatData = await Promise.all(promises);
         setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
@@ -33,6 +35,14 @@ const ChatList = () => {
     };
 
     fetchChats();
+
+    // Listen for chats updates (e.g., when friend request is accepted)
+    const handleChatsUpdated = () => {
+      fetchChats();
+    };
+
+    window.addEventListener('chatsUpdated', handleChatsUpdated);
+    return () => window.removeEventListener('chatsUpdated', handleChatsUpdated);
   }, [currentUser.id]);
 
   const handleSelect = async (chat) => {
@@ -59,10 +69,12 @@ const ChatList = () => {
         const userChats = await api.getUserChats(currentUser.id);
         const items = userChats.chats || [];
 
-        const promises = items.map(async (item) => {
-          const user = await api.getUserInfo(item.receiverId);
-          return { ...item, user };
-        });
+        const promises = items
+          .filter(item => item.receiverId)  // Filter out invalid items
+          .map(async (item) => {
+            const user = await api.getUserInfo(item.receiverId);
+            return { ...item, user };
+          });
 
         const chatData = await Promise.all(promises);
         setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
@@ -104,7 +116,7 @@ const ChatList = () => {
           </div>
         </div>
       ))}
-      {addModal && <AddUser onAddSuccess={handleAddSuccess} />}
+      {addModal && <AddUser onAddSuccess={handleAddSuccess} onClose={() => setAddModal(false)} />}
     </div>
   );
 };
