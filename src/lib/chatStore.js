@@ -7,6 +7,8 @@ export const useChatStore = create((set) => ({
   user: null,
   isCurrentUserBlocked: false,
   isReceiverBlocked: false,
+  incomingCall: null, // 全局来电信息
+  callStatus: 'idle', // idle, calling, incoming, active, ended
   changeChat: (chatId, user) => {
     const currentUser = useUserStore.getState().currentUser;
 
@@ -39,4 +41,7 @@ export const useChatStore = create((set) => ({
       isCurrentUserBlocked: !state.isCurrentUserBlocked,
     }));
   },
+  setIncomingCall: (call) => set({ incomingCall: call }),
+  setCallStatus: (status) => set({ callStatus: status }),
+  clearIncomingCall: () => set({ incomingCall: null, callStatus: 'idle' }),
 }));

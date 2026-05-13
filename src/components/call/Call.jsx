@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import './call.css';
 import { useUserStore } from '../../lib/userStore';
 import { useChatStore } from '../../lib/chatStore';
+import { useSocket } from '../../lib/socket.jsx';
 
-const socket = io('http://localhost:3001');
-
-const Call = ({ onClose }) => {
+const Call = ({ onClose, externalIncomingCall = null }) => {
   const [callStatus, setCallStatus] = useState('idle'); // idle, calling, incoming, active, ended
   const [callType, setCallType] = useState('audio'); // audio, video
-  const [incomingCall, setIncomingCall] = useState(null);
+  const [incomingCall, setIncomingCall] = useState(externalIncomingCall);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const isEndingRef = useRef(false); // 防止重复结束
+  const [callDuration, setCallDuration] = useState(0);
+  const durationIntervalRef = useRef(null);
   
   const { currentUser } = useUserStore();
   const { user: chatUser } = useChatStore();
+  const { socket } = useSocket();
   
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -33,44 +35,48 @@ const Call = ({ onClose }) => {
     if (!currentUser?.id) return;
 
     // Register user with socket
-    socket.emit('register', currentUser.id);
+    socket?.emit('register', currentUser.id);
 
     // Listen for incoming calls
-    socket.on('incomingCall', ({ from, callType }) => {
+    socket?.on('incomingCall', ({ from, callType }) => {
       setIncomingCall({ from, callType });
       setCallType(callType);
       setCallStatus('incoming');
     });
 
     // Listen for call accepted
-    socket.on('callAccepted', async () => {
+    socket?.on('callAccepted', async () => {
       setCallStatus('active');
+      startDurationTimer();
       createPeerConnection();
     });
 
     // Listen for call rejected
-    socket.on('callRejected', () => {
+    socket?.on('callRejected', () => {
       setCallStatus('ended');
       setTimeout(() => setCallStatus('idle'), 2000);
     });
 
     // Listen for call ended
-    socket.on('callEnded', () => {
-      endCall();
+    socket?.on('callEnded', () => {
+      if (!isEndingRef.current) {
+        isEndingRef.current = true;
+        cleanupAndEndCall();
+      }
     });
 
     // Listen for WebRTC signaling
-    socket.on('offer', async ({ from, offer }) => {
+    socket?.on('offer', async ({ from, offer }) => {
       if (callStatus === 'incoming' || callStatus === 'active') {
         await handleOffer(offer);
       }
     });
 
-    socket.on('answer', async ({ answer }) => {
+    socket?.on('answer', async ({ answer }) => {
       await peerConnectionRef.current?.setRemoteDescription(new RTCSessionDescription(answer));
     });
 
-    socket.on('iceCandidate', async ({ candidate }) => {
+    socket?.on('iceCandidate', async ({ candidate }) => {
       try {
         await peerConnectionRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
       } catch (err) {
@@ -79,13 +85,13 @@ const Call = ({ onClose }) => {
     });
 
     return () => {
-      socket.off('incomingCall');
-      socket.off('callAccepted');
-      socket.off('callRejected');
-      socket.off('callEnded');
-      socket.off('offer');
-      socket.off('answer');
-      socket.off('iceCandidate');
+      socket?.off('incomingCall');
+      socket?.off('callAccepted');
+      socket?.off('callRejected');
+      socket?.off('callEnded');
+      socket?.off('offer');
+      socket?.off('answer');
+      socket?.off('iceCandidate');
     };
   }, [currentUser?.id]);
 
@@ -111,7 +117,7 @@ const Call = ({ onClose }) => {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        socket.emit('iceCandidate', {
+        socket?.emit('iceCandidate', {
           from: currentUser.id,
           to: incomingCall?.from || chatUser?.id,
           candidate: event.candidate
@@ -157,13 +163,13 @@ const Call = ({ onClose }) => {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    socket.emit('call', {
+    socket?.emit('call', {
       from: currentUser.id,
       to: chatUser.id,
       callType: type
     });
 
-    socket.emit('offer', {
+    socket?.emit('offer', {
       from: currentUser.id,
       to: chatUser.id,
       offer
@@ -177,7 +183,7 @@ const Call = ({ onClose }) => {
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
-    socket.emit('answer', {
+    socket?.emit('answer', {
       from: currentUser.id,
       to: incomingCall.from,
       answer
@@ -192,16 +198,17 @@ const Call = ({ onClose }) => {
 
     await createPeerConnection();
 
-    socket.emit('acceptCall', {
+    socket?.emit('acceptCall', {
       from: currentUser.id,
       to: incomingCall.from
     });
 
     setCallStatus('active');
+    startDurationTimer();
   };
 
   const rejectCall = () => {
-    socket.emit('rejectCall', {
+    socket?.emit('rejectCall', {
       from: currentUser.id,
       to: incomingCall.from
     });
@@ -209,7 +216,7 @@ const Call = ({ onClose }) => {
     setCallStatus('idle');
   };
 
-  const endCall = () => {
+  const cleanupMedia = () => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
     }
@@ -219,17 +226,58 @@ const Call = ({ onClose }) => {
       peerConnectionRef.current = null;
     }
 
-    socket.emit('endCall', {
+    setLocalStream(null);
+    setRemoteStream(null);
+  };
+
+  const startDurationTimer = () => {
+    setCallDuration(0);
+    durationIntervalRef.current = setInterval(() => {
+      setCallDuration(prev => prev + 1);
+    }, 1000);
+  };
+
+  const stopDurationTimer = () => {
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const cleanupAndEndCall = () => {
+    cleanupMedia();
+    setIncomingCall(null);
+    setCallStatus('ended');
+    setTimeout(() => {
+      setCallStatus('idle');
+      isEndingRef.current = false;
+    }, 2000);
+  };
+
+  const endCall = () => {
+    if (isEndingRef.current) return;
+    isEndingRef.current = true;
+    
+    cleanupMedia();
+
+    socket?.emit('endCall', {
       from: currentUser.id,
       to: incomingCall?.from || chatUser?.id
     });
 
-    setLocalStream(null);
-    setRemoteStream(null);
     setIncomingCall(null);
     setCallStatus('ended');
     
-    setTimeout(() => setCallStatus('idle'), 2000);
+    setTimeout(() => {
+      setCallStatus('idle');
+      isEndingRef.current = false;
+    }, 2000);
   };
 
   const toggleMute = () => {
@@ -249,6 +297,35 @@ const Call = ({ onClose }) => {
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoOff(!videoTrack.enabled);
       }
+    }
+  };
+
+  const switchToVideo = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      
+      // Replace video track
+      const videoTrack = stream.getVideoTracks()[0];
+      const sender = peerConnectionRef.current?.getSenders().find(s => s.track?.kind === 'video');
+      
+      if (sender && videoTrack) {
+        await sender.replaceTrack(videoTrack);
+      }
+      
+      // Update local stream
+      if (localStream) {
+        localStream.getVideoTracks().forEach(track => track.stop());
+      }
+      
+      setLocalStream(stream);
+      setCallType('video');
+      setIsVideoOff(false);
+      
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error('Error switching to video:', err);
     }
   };
 
@@ -323,7 +400,7 @@ const Call = ({ onClose }) => {
               <div className="audio-calling">
                 <img src={chatUser?.avatar || "./avatar.png"} alt="" />
                 <h3>{chatUser?.username || '用户'}</h3>
-                <p>通话中...</p>
+                <p className="call-duration">{formatDuration(callDuration)}</p>
               </div>
             )}
           </div>
@@ -338,10 +415,19 @@ const Call = ({ onClose }) => {
             )}
           </div>
 
+          <div className="call-duration-display">
+            {formatDuration(callDuration)}
+          </div>
+
           <div className="call-controls">
             <button className={isMuted ? 'active' : ''} onClick={toggleMute}>
               <img src={isMuted ? "./mic-off.png" : "./mic.png"} alt="" />
             </button>
+            {callType === 'audio' && (
+              <button onClick={switchToVideo}>
+                <img src="./video.png" alt="开启视频" />
+              </button>
+            )}
             {callType === 'video' && (
               <button className={isVideoOff ? 'active' : ''} onClick={toggleVideo}>
                 <img src={isVideoOff ? "./video-off.png" : "./video.png"} alt="" />

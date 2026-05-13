@@ -107,6 +107,19 @@ io.on('connection', (socket) => {
       if (socketId === socket.id) {
         delete users[userId];
         console.log(`User ${userId} disconnected`);
+        
+        // Clean up any active calls involving this user
+        Object.keys(calls).forEach(callKey => {
+          const call = calls[callKey];
+          if (call.from === userId || call.to === userId) {
+            const otherUserId = call.from === userId ? call.to : call.from;
+            const otherSocketId = users[otherUserId];
+            if (otherSocketId) {
+              io.to(otherSocketId).emit('callEnded', { from: userId });
+            }
+            delete calls[callKey];
+          }
+        });
         break;
       }
     }
