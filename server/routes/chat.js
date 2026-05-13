@@ -102,6 +102,14 @@ router.post('/chat/:chatId/message', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid chat ID format' });
     }
 
+    // Get the chat to find the receiver
+    const chat = await db.collection('chats').findOne({ _id: new ObjectId(chatId) });
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    const receiverId = chat.members.find(m => m !== senderId);
+
     const message = {
       text,
       senderId,
@@ -113,6 +121,17 @@ router.post('/chat/:chatId/message', authenticateToken, async (req, res) => {
       { _id: new ObjectId(chatId) },
       { $push: { messages: message } }
     );
+
+    // Update receiver's userchats with unreadCount
+    if (receiverId) {
+      await db.collection('userchats').updateOne(
+        { userId: receiverId, "chats.chatId": chatId },
+        { 
+          $inc: { "chats.$.unreadCount": 1 },
+          $set: { "chats.$.lastMessage": text }
+        }
+      );
+    }
 
     res.json(message);
   } catch (error) {

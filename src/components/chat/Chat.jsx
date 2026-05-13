@@ -4,6 +4,7 @@ import EmojiPicker from "emoji-picker-react";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import { api } from "../../lib/api";
+import Call from "../call/Call";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -13,6 +14,7 @@ const Chat = () => {
     url: ' ',
     file: null
   });
+  const [showCall, setShowCall] = useState(false);
 
   const { currentUser } = useUserStore();
   const { chatId, user } = useChatStore();
@@ -21,7 +23,7 @@ const Chat = () => {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  }, [chat?.messages?.length]);
 
   useEffect(() => {
     if (!chatId) return;
@@ -36,6 +38,10 @@ const Chat = () => {
     };
 
     fetchChat();
+
+    // Poll for new messages every 3 seconds
+    const interval = setInterval(fetchChat, 3000);
+    return () => clearInterval(interval);
   }, [chatId]);
 
   const handleImg = (e) => {
@@ -86,6 +92,9 @@ const Chat = () => {
       // Refresh chat data
       const updatedChat = await api.getChat(chatId);
       setChat(updatedChat);
+      
+      // Notify ChatList to refresh
+      window.dispatchEvent(new CustomEvent('chatsUpdated'));
     } catch (error) {
       console.log("Send message error:", error);
     } finally {
@@ -108,8 +117,8 @@ const Chat = () => {
           </div>
         </div>
         <div className="icons">
-          <img src="./phone.png" alt="" />
-          <img src="./video.png" alt="" />
+          <img src="./phone.png" alt="" onClick={() => setShowCall(true)} />
+          <img src="./video.png" alt="" onClick={() => setShowCall(true)} />
           <img src="./info.png" alt="" />
         </div>
       </div>
@@ -158,6 +167,7 @@ const Chat = () => {
           发送
         </button>
       </div>
+      {showCall && <Call onClose={() => setShowCall(false)} />}
     </div>
   );
 };

@@ -36,13 +36,19 @@ const ChatList = () => {
 
     fetchChats();
 
+    // Poll for new chats every 3 seconds
+    const interval = setInterval(fetchChats, 3000);
+
     // Listen for chats updates (e.g., when friend request is accepted)
     const handleChatsUpdated = () => {
       fetchChats();
     };
 
     window.addEventListener('chatsUpdated', handleChatsUpdated);
-    return () => window.removeEventListener('chatsUpdated', handleChatsUpdated);
+    return () => {
+      window.removeEventListener('chatsUpdated', handleChatsUpdated);
+      clearInterval(interval);
+    };
   }, [currentUser.id]);
 
   const handleSelect = async (chat) => {
@@ -53,6 +59,7 @@ const ChatList = () => {
 
       if (chatIndex !== -1) {
         chats[chatIndex].isSeen = true;
+        chats[chatIndex].unreadCount = 0;
         await api.updateUserChats(currentUser.id, chats);
       }
 
@@ -109,7 +116,12 @@ const ChatList = () => {
             backgroundColor: chat?.isSeen ? "transparent" : "#5183fe",
           }}
         >
-          <img src={chat.user?.avatar || "./avatar.png"} alt="" />
+          <div className="avatarContainer">
+            <img src={chat.user?.avatar || "./avatar.png"} alt="" />
+            {!chat.isSeen && chat.unreadCount > 0 && (
+              <span className="unreadBadge">{chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>
+            )}
+          </div>
           <div className="texts">
             <span>{chat.user?.username}</span>
             <p>{chat.lastMessage}</p>
