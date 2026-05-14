@@ -28,7 +28,12 @@ const ChatList = () => {
           });
 
         const chatData = await Promise.all(promises);
-        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+        // Sort: pinned first, then by updatedAt
+        setChats(chatData.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return b.updatedAt - a.updatedAt;
+        }));
       } catch (error) {
         console.error('Fetch chats error:', error);
       }
@@ -84,7 +89,12 @@ const ChatList = () => {
           });
 
         const chatData = await Promise.all(promises);
-        setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
+        // Sort: pinned first, then by updatedAt
+        setChats(chatData.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return b.updatedAt - a.updatedAt;
+        }));
       } catch (error) {
         console.error('Refresh chats error:', error);
       }
@@ -109,12 +119,9 @@ const ChatList = () => {
       </div>
       {chats.map((chat) => (
         <div
-          className="item"
+          className={`item ${chatId === chat.chatId ? 'selected' : ''} ${chat.isPinned ? 'pinned' : ''}`}
           key={chat.chatId}
           onClick={() => handleSelect(chat)}
-          style={{
-            backgroundColor: chat?.isSeen ? "transparent" : "#5183fe",
-          }}
         >
           <div className="avatarContainer">
             <img src={chat.user?.avatar || "./avatar.png"} alt="" />
@@ -123,7 +130,10 @@ const ChatList = () => {
             )}
           </div>
           <div className="texts">
-            <span>{chat.user?.username}</span>
+            <div className="name-row">
+              {chat.isPinned && <img src="./pin.svg" alt="置顶" className="pin-icon" />}
+              <span>{chat.user?.username}</span>
+            </div>
             <p>{chat.lastMessage}</p>
           </div>
         </div>

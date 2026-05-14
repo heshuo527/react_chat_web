@@ -6,7 +6,7 @@ import FriendRequests from './friendRequests/FriendRequests'
 import { api } from '../../lib/api';
 import { useUserStore } from '../../lib/userStore';
 
-const List = () => {
+const List = ({ onOpenSettings }) => {
   const [hasFriendRequests, setHasFriendRequests] = useState(false);
   const { currentUser } = useUserStore();
 
@@ -25,7 +25,7 @@ const List = () => {
 
   return (
     <div className='list'>
-      <UserInfo />
+      <UserInfo onOpenSettings={onOpenSettings} />
       <ChatList />
       <FriendRequests onRequestAccepted={handleRequestAccepted} />
     </div>

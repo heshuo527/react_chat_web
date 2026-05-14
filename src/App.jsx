@@ -6,10 +6,9 @@ import Notification from "./components/notifiction/Notification";
 import Call from "./components/call/Call";
 import IncomingCall from "./components/call/IncomingCall";
 import "react-toastify/dist/ReactToastify.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
-import { api } from "./lib/api";
 import { SocketProvider, useSocket } from "./lib/socket.jsx";
 
 const AppContent = () => {
@@ -17,19 +16,34 @@ const AppContent = () => {
   const { chatId, incomingCall, setIncomingCall, clearIncomingCall } = useChatStore();
   const { socket } = useSocket();
   const [showCall, setShowCall] = useState(false);
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat' | 'detail'
+  const initRef = useRef(false);
+
+  // 切换到聊天视图时同步chatId
+  useEffect(() => {
+    if (chatId) {
+      setMobileView('chat');
+    }
+  }, [chatId]);
 
   useEffect(() => {
-    // Check for stored token and user on app load
+    if (initRef.current) return;
+    initRef.current = true;
+
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     
     if (storedUser && token) {
       try {
         const user = JSON.parse(storedUser);
-        fetchUserInfo(user.id).catch(err => {
-          console.error('Failed to fetch user info:', err);
+        if (user?.id) {
+          fetchUserInfo(user.id).catch(err => {
+            console.error('Fetch user failed:', err);
+            useUserStore.setState({ isLoading: false });
+          });
+        } else {
           useUserStore.setState({ isLoading: false });
-        });
+        }
       } catch (e) {
         console.error('Failed to parse stored user:', e);
         useUserStore.setState({ isLoading: false });
@@ -37,7 +51,7 @@ const AppContent = () => {
     } else {
       useUserStore.setState({ isLoading: false });
     }
-  }, [fetchUserInfo]);
+  }, []);
 
   // 全局监听来电
   useEffect(() => {
@@ -73,14 +87,26 @@ const AppContent = () => {
     clearIncomingCall();
   };
 
+  // 移动端返回列表
+  const handleBackToList = () => {
+    setMobileView('list');
+    useChatStore.setState({ chatId: null, user: null });
+  };
+
+  // 移动端打开设置
+  const handleOpenSettings = () => {
+    setMobileView('detail');
+  };
+
   return (
     <>
       <div className="container">
         {currentUser ? (
           <>
-            <List />
-            {chatId && <Chat />}
-            {chatId && <Detail />}
+            {/* 桌面端：三栏布局 */}
+            <List onOpenSettings={handleOpenSettings} />
+            {chatId && <Chat onBack={handleBackToList} />}
+            {chatId && <Detail onBack={handleBackToList} />}
           </>
         ) : (
           <Login />
@@ -101,10 +127,6 @@ const AppContent = () => {
 };
 
 const App = () => {
-  const { isLoading } = useUserStore();
-
-  if (isLoading) return <div className="loading">Loading...</div>
-
   return (
     <SocketProvider>
       <AppContent />

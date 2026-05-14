@@ -26,7 +26,13 @@ router.get('/:uid', authenticateToken, async (req, res) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
-      blocked: user.blocked || []
+      blocked: user.blocked || [],
+      // 隐私设置
+      privacy: user.privacy || {
+        lastSeen: 'everyone',      // everyone | contacts | nobody
+        onlineStatus: 'everyone',  // everyone | contacts | nobody
+        readReceipt: true          // true | false
+      }
     });
   } catch (error) {
     console.error('Get user error:', error);
@@ -38,7 +44,7 @@ router.get('/:uid', authenticateToken, async (req, res) => {
 router.put('/:uid', authenticateToken, async (req, res) => {
   try {
     const { uid } = req.params;
-    const { username, avatar } = req.body;
+    const { username, avatar, blocked, privacy } = req.body;
     const db = getDB();
 
     // Validate ObjectId format
@@ -49,6 +55,12 @@ router.put('/:uid', authenticateToken, async (req, res) => {
     const updateData = {};
     if (username) updateData.username = username;
     if (avatar) updateData.avatar = avatar;
+    if (blocked) updateData.blocked = blocked;
+    
+    // 隐私设置更新
+    if (privacy) {
+      updateData.privacy = privacy;
+    }
 
     await db.collection('users').updateOne(
       { _id: new ObjectId(uid) },

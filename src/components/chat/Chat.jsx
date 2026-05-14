@@ -6,15 +6,16 @@ import { useUserStore } from "../../lib/userStore";
 import { api } from "../../lib/api";
 import Call from "../call/Call";
 
-const Chat = () => {
+const Chat = ({ onBack }) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [chat, setChat] = useState();
   const [img, setImg] = useState({
-    url: ' ',
+    url: '',
     file: null
   });
   const [showCall, setShowCall] = useState(false);
+  const [showFullDate, setShowFullDate] = useState(false);
 
   const { currentUser } = useUserStore();
   const { chatId, user } = useChatStore();
@@ -24,6 +25,48 @@ const Chat = () => {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat?.messages?.length]);
+
+  const formatTime = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (showFullDate) {
+      return d.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDateSeparator = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) {
+      return '今天';
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      return '昨天';
+    }
+    return d.toLocaleDateString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const shouldShowDateSeparator = (index) => {
+    if (!chat?.messages?.length) return false;
+    if (index === 0) return true;
+    const current = new Date(chat.messages[index].createdAt);
+    const previous = new Date(chat.messages[index - 1].createdAt);
+    return current.toDateString() !== previous.toDateString();
+  };
 
   useEffect(() => {
     if (!chatId) return;
@@ -44,11 +87,18 @@ const Chat = () => {
     return () => clearInterval(interval);
   }, [chatId]);
 
+  // 切换聊天时清除图片
+  useEffect(() => {
+    setImg({ url: '', file: null });
+  }, [chatId]);
+
   const handleImg = (e) => {
     if (e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log('File selected:', file);
       setImg({
-        file: e.target.files[0],
-        url: URL.createObjectURL(e.target.files[0]),
+        file: file,
+        url: URL.createObjectURL(file),
       })
     }
   };
@@ -59,13 +109,21 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-    if (text === "" && !img.file) return;
+    console.log('handleSend called, img.file:', img.file, 'text:', text);
+    if (text === "" && !img.file) {
+      console.log('Early return: nothing to send');
+      return;
+    }
 
     try {
       let imgUrl = null;
 
       if (img.file) {
-        imgUrl = await api.uploadFile(img.file);
+        console.log('Uploading file:', img.file);
+        const uploadResult = await api.uploadFile(img.file);
+        console.log('Upload result:', uploadResult);
+        imgUrl = uploadResult.url;
+        console.log('Image URL:', imgUrl);
       }
 
       const message = {
@@ -74,6 +132,8 @@ const Chat = () => {
         img: imgUrl,
         createdAt: new Date(),
       };
+      
+      console.log('Sending message:', message);
 
       await api.addMessage(chatId, message);
 
@@ -96,7 +156,7 @@ const Chat = () => {
       // Notify ChatList to refresh
       window.dispatchEvent(new CustomEvent('chatsUpdated'));
     } catch (error) {
-      console.log("Send message error:", error);
+      console.error("Send message error:", error);
     } finally {
       setImg({
         url: "",
@@ -124,16 +184,27 @@ const Chat = () => {
       </div>
       <div className="center">
         {chat?.messages?.map((message, index) => (
-          <div className={message.senderId === currentUser.id ? "message own" : "message"} key={index}>
-            <div className="texts">
-              {message.img && <img src={message.img} />}
-              <p>{message.text}</p>
+          <React.Fragment key={index}>
+            {shouldShowDateSeparator(index) && (
+              <div className="date-separator">
+                <span>{formatDateSeparator(message.createdAt)}</span>
+              </div>
+            )}
+            <div className={message.senderId === currentUser.id ? "message own" : "message"}>
+              <div className="texts">
+                {message.img && <img src={message.img} />}
+                <p>{message.text}</p>
+                <span className="time" onClick={() => setShowFullDate(!showFullDate)}>
+                  {formatTime(message.createdAt)}
+                </span>
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         ))}
         {img.url && <div className="message own">
           <div className="texts">
             <img src={img.url} />
+            <span className="time" onClick={() => setShowFullDate(!showFullDate)}>{formatTime(new Date())}</span>
           </div>
         </div>}
         <div ref={endRef}></div>
@@ -163,7 +234,7 @@ const Chat = () => {
             <EmojiPicker open={open} onEmojiClick={handleEmoji} />
           </div>
         </div>
-        <button className="sendButton" onClick={handleSend}>
+        <button className="sendButton" onClick={() => { console.log('Send button clicked'); handleSend(); }}>
           发送
         </button>
       </div>

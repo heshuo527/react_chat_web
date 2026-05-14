@@ -30,7 +30,10 @@ router.post('/', authenticateToken, upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const fileUrl = `/uploads/${req.file.filename}`;
+    console.log('File uploaded:', req.file);
+    // Return full URL for frontend access
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    console.log('File URL:', fileUrl);
     res.json({ url: fileUrl });
   } catch (error) {
     console.error('Upload error:', error);

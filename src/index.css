@@ -6,24 +6,56 @@
     "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background-image: url("/bg.jpg");
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   color: white;
 }
 
 .container {
-  width: 80vw;
+  width: 95vw;
+  max-width: 1400px;
   height: 90vh;
+  max-height: 900px;
   background-color: rgba(17, 25, 40, 0.75);
-  /* https://developer.mozilla.org/zh-CN/docs/Web/CSS/backdrop-filter */
   backdrop-filter: blur(19px) saturate(180%);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.125);
   display: flex;
+  overflow: hidden;
+}
+
+/* 平板设备 */
+@media screen and (max-width: 768px) {
+  body {
+    align-items: flex-start;
+    padding: 0;
+  }
+  
+  .container {
+    width: 100vw;
+    height: 100vh;
+    max-height: none;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+  }
+}
+
+/* 手机设备 */
+@media screen and (max-width: 480px) {
+  .container {
+    width: 100vw;
+    height: 100vh;
+  }
 }
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {

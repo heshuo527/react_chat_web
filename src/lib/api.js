@@ -34,8 +34,15 @@ class ApiService {
       },
     };
 
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 10000);
+    });
+
     try {
-      const response = await fetch(url, config);
+      const response = await Promise.race([
+        fetch(url, config),
+        timeoutPromise
+      ]);
       const data = await response.json();
       
       if (!response.ok) {
@@ -119,6 +126,8 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
 
+    console.log('Uploading to:', `${API_BASE_URL}/upload`);
+    
     const response = await fetch(`${API_BASE_URL}/upload`, {
       method: 'POST',
       headers: {
@@ -127,7 +136,10 @@ class ApiService {
       body: formData,
     });
 
+    console.log('Response status:', response.status);
     const data = await response.json();
+    console.log('Response data:', data);
+    
     if (!response.ok) {
       throw new Error(data.error || 'Upload failed');
     }

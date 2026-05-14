@@ -4,7 +4,7 @@ import { useUserStore } from '../../../lib/userStore';
 import { api } from '../../../lib/api';
 import upload from '../../../lib/upload';
 
-const UserInfo = () => {
+const UserInfo = ({ onOpenSettings }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [avatar, setAvatar] = useState({

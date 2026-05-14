@@ -13,6 +13,21 @@
     justify-content: space-between;
     border-bottom: 1px solid #dddddd35;
 
+    .back-btn {
+      background: none;
+      border: none;
+      padding: 8px;
+      margin-right: 10px;
+      cursor: pointer;
+      display: none;
+      
+      img {
+        width: 20px;
+        height: 20px;
+        filter: invert(1);
+      }
+    }
+
     .user {
       display: flex;
       align-items: center;
@@ -70,8 +85,12 @@
         align-self: flex-end;
 
         .texts {
+          align-items: flex-end;
           > p {
             background-color: #5183fe;
+          }
+          .time {
+            color: rgba(255, 255, 255, 0.7);
           }
         }
       }
@@ -96,10 +115,37 @@
           padding: 20px;
           background-color: rgba(17, 25, 40, 0.5);
           border-radius: 10px;
+          color: white;
+          line-height: 1.4;
         }
-        > span {
-          font-size: 12px;
+        .time {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.5);
+          margin-top: 4px;
+          text-align: right;
+          cursor: pointer;
+          transition: color 0.2s ease;
+          
+          &:hover {
+            color: rgba(255, 255, 255, 0.8);
+          }
         }
+      }
+    }
+
+    .date-separator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 15px 0;
+      
+      span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 4px 12px;
+        border-radius: 10px;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
       }
     }
   }
@@ -163,6 +209,137 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+    }
+  }
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .chat {
+    flex: 1;
+    border: none;
+    min-width: 0;
+    
+    .top {
+      padding: 15px;
+      
+      .back-btn {
+        display: block;
+      }
+      
+      .user {
+        > img {
+          width: 45px;
+          height: 45px;
+        }
+        
+        .texts {
+          > span {
+            font-size: 16px;
+          }
+          > p {
+            font-size: 12px;
+          }
+        }
+      }
+      
+      .icons {
+        gap: 15px;
+        > img {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+    
+    .center {
+      padding: 15px;
+      
+      .message {
+        max-width: 85%;
+        
+        > img {
+          width: 25px;
+          height: 25px;
+        }
+        
+        .texts {
+          > p {
+            padding: 12px 15px;
+            font-size: 14px;
+          }
+          > img {
+            max-width: 200px;
+          }
+        }
+      }
+    }
+    
+    .bottom {
+      padding: 15px;
+      gap: 10px;
+      
+      .icons {
+        gap: 15px;
+        > img, > label > img {
+          width: 18px;
+          height: 18px;
+        }
+      }
+      
+      > input {
+        padding: 12px 15px;
+        font-size: 14px;
+      }
+      
+      .sendButton {
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .chat {
+    .top {
+      padding: 10px;
+    }
+    
+    .center {
+      padding: 10px;
+      gap: 15px;
+      
+      .message {
+        max-width: 90%;
+        gap: 10px;
+        
+        > img {
+          display: none;
+        }
+        
+        .texts {
+          > p {
+            padding: 10px 12px;
+            font-size: 13px;
+          }
+          > img {
+            max-width: 150px;
+          }
+        }
+      }
+    }
+    
+    .bottom {
+      padding: 10px;
+      
+      .emoji {
+        .picker {
+          bottom: 40px;
+          right: 0;
+          left: auto;
+        }
+      }
     }
   }
 }

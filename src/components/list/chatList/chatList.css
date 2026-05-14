@@ -45,6 +45,22 @@
     padding: 20px;
     cursor: pointer;
     border-bottom: 1px solid #dddddd35;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    &.pinned {
+      background-color: rgba(81, 131, 254, 0.1);
+      border-left: 3px solid #5183fe;
+    }
+
+    &.selected {
+      background-color: rgba(81, 131, 254, 0.25);
+      border-left: 3px solid #5183fe;
+    }
+
     .avatarContainer {
       position: relative;
       > img {
@@ -75,12 +91,137 @@
       flex-direction: column;
       gap: 10px;
 
+      .name-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        .pin-icon {
+          width: 14px;
+          height: 14px;
+          opacity: 0.6;
+        }
+
+        > span {
+          font-weight: 500;
+        }
+      }
+
       > span {
         font-weight: 500;
       }
       > p {
         font-size: 14px;
         font-weight: 300;
+        color: rgba(255, 255, 255, 0.6);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+      }
+    }
+  }
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .chatList {
+    .search {
+      padding: 15px;
+      gap: 10px;
+      
+      .searchBar {
+        padding: 8px;
+        gap: 10px;
+        
+        > input {
+          font-size: 14px;
+        }
+        
+        > img {
+          width: 18px;
+          height: 18px;
+        }
+      }
+      
+      .add {
+        width: 32px;
+        height: 32px;
+        padding: 8px;
+      }
+    }
+    
+    .item {
+      padding: 15px;
+      gap: 15px;
+      
+      .avatarContainer {
+        > img {
+          width: 45px;
+          height: 45px;
+        }
+        .unreadBadge {
+          font-size: 10px;
+          min-width: 16px;
+          height: 16px;
+        }
+      }
+      
+      .texts {
+        gap: 6px;
+        
+        .name-row {
+          .pin-icon {
+            width: 12px;
+            height: 12px;
+          }
+        }
+        
+        > span {
+          font-size: 14px;
+        }
+        > p {
+          font-size: 12px;
+          max-width: 120px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .chatList {
+    .search {
+      padding: 10px;
+      
+      .searchBar {
+        padding: 6px 10px;
+        border-radius: 8px;
+      }
+      
+      .add {
+        width: 30px;
+        height: 30px;
+        padding: 6px;
+        border-radius: 8px;
+      }
+    }
+    
+    .item {
+      padding: 12px;
+      gap: 12px;
+      
+      .avatarContainer {
+        > img {
+          width: 40px;
+          height: 40px;
+        }
+      }
+      
+      .texts {
+        > p {
+          max-width: 100px;
+        }
       }
     }
   }

@@ -68,3 +68,62 @@
     background-color: #dddddd35;
   }
 }
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .login {
+    gap: 40px;
+    
+    .item {
+      > form {
+        gap: 15px;
+        width: 100%;
+        padding: 0 20px;
+        
+        > input {
+          padding: 15px;
+          font-size: 14px;
+          width: 100%;
+        }
+        
+        > label {
+          > img {
+            width: 40px;
+            height: 40px;
+          }
+        }
+        
+        > button {
+          padding: 15px;
+          font-size: 14px;
+        }
+      }
+    }
+    
+    .separator {
+      display: none;
+    }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .login {
+    gap: 30px;
+    
+    .item {
+      > form {
+        gap: 12px;
+        padding: 0 15px;
+        
+        > input {
+          padding: 12px;
+          font-size: 13px;
+        }
+        
+        > button {
+          padding: 12px;
+        }
+      }
+    }
+  }
+}

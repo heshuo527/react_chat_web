@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { api } from "./api";
 
-export const useUserStore = create((set) => ({
+export const useUserStore = create((set, get) => ({
   currentUser: null,
   isLoading: true,
   fetchUserInfo: async (uid) => {
@@ -48,5 +48,17 @@ export const useUserStore = create((set) => ({
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     set({ currentUser: null, isLoading: false });
+  },
+  updatePrivacySettings: async (privacySettings) => {
+    const { currentUser } = get();
+    if (!currentUser?.id) return;
+    try {
+      await api.updateUser(currentUser.id, { privacy: privacySettings });
+      set((state) => ({
+        currentUser: { ...state.currentUser, privacy: privacySettings }
+      }));
+    } catch (error) {
+      console.error('Failed to update privacy settings:', error);
+    }
   },
 }));
