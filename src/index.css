@@ -57,6 +57,43 @@ body {
     height: 100vh;
   }
 }
+
+/* 移动端安全区域适配 */
+@supports (padding: env(safe-area-inset-top)) {
+  .container {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* 移动端触摸优化 */
+@media screen and (max-width: 768px) {
+  /* 优化触摸目标大小 */
+  button, 
+  .icon-button,
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* 输入框优化 */
+  input, 
+  textarea {
+    font-size: 16px; /* 防止iOS缩放 */
+  }
+  
+  /* 禁用触摸高亮 */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* 平滑滚动 */
+  .container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   width: 5px;

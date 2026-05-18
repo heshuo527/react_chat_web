@@ -6,7 +6,7 @@ import { useUserStore } from "../../lib/userStore";
 import { api } from "../../lib/api";
 import Call from "../call/Call";
 
-const Chat = ({ onBack }) => {
+const Chat = ({ onBack, onOpenDetail }) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [chat, setChat] = useState();
@@ -19,6 +19,7 @@ const Chat = ({ onBack }) => {
 
   const { currentUser } = useUserStore();
   const { chatId, user } = useChatStore();
+  const isMobile = window.innerWidth <= 768;
 
   const endRef = useRef(null);
 
@@ -169,6 +170,13 @@ const Chat = ({ onBack }) => {
   return (
     <div className="chat">
       <div className="top">
+        {isMobile && (
+          <button className="back-btn" onClick={onBack}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+        )}
         <div className="user">
           <img src={user?.avatar || "./avatar.png"} alt="" />
           <div className="texts">
@@ -179,7 +187,7 @@ const Chat = ({ onBack }) => {
         <div className="icons">
           <img src="./phone.png" alt="" onClick={() => setShowCall(true)} />
           <img src="./video.png" alt="" onClick={() => setShowCall(true)} />
-          <img src="./info.png" alt="" />
+          <img src="./info.png" alt="" onClick={() => isMobile && onOpenDetail && onOpenDetail()} />
         </div>
       </div>
       <div className="center">

@@ -4,25 +4,45 @@
   flex-direction: column;
   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   color: white;
+  position: relative;
 
   .back-btn {
     background: none;
     border: none;
     padding: 8px;
     cursor: pointer;
-    display: none;
     position: absolute;
     top: 15px;
     left: 15px;
+    z-index: 10;
     
     img {
       width: 20px;
       height: 20px;
-      filter: invert(1);
     }
     
     @media screen and (max-width: 768px) {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      transition: background 0.2s ease;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      
+      &:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      
+      svg {
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 

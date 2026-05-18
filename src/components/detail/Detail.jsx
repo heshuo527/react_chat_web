@@ -16,6 +16,7 @@ const Detail = ({ onBack }) => {
     notifications: true,
   });
   const [activePopup, setActivePopup] = useState(null); // 当前打开的弹窗
+  const isMobile = window.innerWidth <= 768;
 
   // 隐私设置选项
   const privacyOptions = {
@@ -149,6 +150,13 @@ const Detail = ({ onBack }) => {
 
   return (
     <div className='detail'>
+      {isMobile && (
+        <button className='back-btn' onClick={onBack}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+      )}
       <div className='user'>
         <div className='avatar-wrapper'>
           <img src={user?.avatar || "./avatar.png"} alt='' className='avatar' />

@@ -17,7 +17,17 @@ const AppContent = () => {
   const { socket } = useSocket();
   const [showCall, setShowCall] = useState(false);
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat' | 'detail'
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const initRef = useRef(false);
+
+  // 监听屏幕大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 切换到聊天视图时同步chatId
   useEffect(() => {
@@ -98,15 +108,31 @@ const AppContent = () => {
     setMobileView('detail');
   };
 
+  // 移动端根据视图状态渲染组件
+  const renderMobileView = () => {
+    switch (mobileView) {
+      case 'chat':
+        return <Chat onBack={handleBackToList} onOpenDetail={handleOpenSettings} />;
+      case 'detail':
+        return <Detail onBack={() => setMobileView(chatId ? 'chat' : 'list')} />;
+      default:
+        return <List onOpenSettings={handleOpenSettings} />;
+    }
+  };
+
   return (
     <>
       <div className="container">
         {currentUser ? (
           <>
-            {/* 桌面端：三栏布局 */}
-            <List onOpenSettings={handleOpenSettings} />
-            {chatId && <Chat onBack={handleBackToList} />}
-            {chatId && <Detail onBack={handleBackToList} />}
+            {/* 桌面端：三栏布局，移动端：根据mobileView渲染 */}
+            {isMobile ? renderMobileView() : (
+              <>
+                <List onOpenSettings={handleOpenSettings} />
+                {chatId && <Chat onBack={handleBackToList} />}
+                {chatId && <Detail onBack={handleBackToList} />}
+              </>
+            )}
           </>
         ) : (
           <Login />
